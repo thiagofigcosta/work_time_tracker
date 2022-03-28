@@ -27,6 +27,16 @@ def get_utc_now():
     return set_timezone_on_datetime(now, 'UTC')
 
 
+def get_yesterday():
+    now = datetime.datetime.now() - datetime.timedelta(days=1)
+    return set_timezone_on_datetime(now, get_local_timezone())
+
+
+def get_utc_yesterday():
+    now = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+    return set_timezone_on_datetime(now, 'UTC')
+
+
 def get_today_interval():
     today_date = get_now()
     return get_day_interval_from_date(today_date)
@@ -85,12 +95,17 @@ def add_minutes_to_datetime(date, minutes):
     return date + datetime.timedelta(minutes=minutes)
 
 
+def add_days_to_datetime(date, days):
+    return date + datetime.timedelta(days=days)
+
+
 def get_all_dates_between(start_date, end_date):
     current_date = datetime.datetime(start_date.year, start_date.month, start_date.day, 0, 0, 0)
     current_date = set_timezone_on_datetime(current_date, 'UTC')
-    dates = [current_date]
+    dates = []
+    end_date -= datetime.timedelta(days=1)
     while current_date <= end_date:
-        current_date += datetime.timedelta(days=1)
         dates.append(current_date)
+        current_date += datetime.timedelta(days=1)
 
     return dates

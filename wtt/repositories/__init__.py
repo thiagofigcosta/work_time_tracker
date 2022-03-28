@@ -1,7 +1,7 @@
-import os
 import errno
-from pathlib import Path
+import os
 import sqlite3
+from pathlib import Path
 
 wtt_dir = os.path.join(str(Path.home()), ".wtt")
 if not os.path.exists(wtt_dir):
@@ -11,7 +11,7 @@ if not os.path.exists(wtt_dir):
         if e.errno != errno.EEXIST:
             raise e
 
-DATABASE_PATH = os.getenv('DATABASE_NAME', os.path.join(wtt_dir,'wtt_records.db'))
+DATABASE_PATH = os.getenv('DATABASE_NAME', os.path.join(wtt_dir, 'wtt_records.db'))
 
 
 def dict_factory(cursor, row):

@@ -1,4 +1,5 @@
 import os
+import time
 
 from wtt.models.time_card import TimeCard
 from wtt.repositories import absence as absence_repo
@@ -35,7 +36,9 @@ def convert_time_cards_to_minutes(time_cards):
     return time_cards_in_min
 
 
-def print_today_report(profile):
+def print_today_report(profile, from_auto_run=False):
+    if from_auto_run:
+        time.sleep(0.3)
     office_hours = profile.daily_office_hours
     today = date_utils.get_now()
     is_work_day = date_utils.is_work_day(today)
@@ -58,6 +61,12 @@ def print_today_report(profile):
 
     worked_minutes = get_worked_time_from_any_cards(time_cards, profile.auto_insert_lunch_time)
     report = get_default_report(office_hours, profile.max_allowed_extra_hours, worked_minutes, len(time_cards))
+    if from_auto_run:
+        report_array = report.split('\n', 2)
+        if len(report_array) == 3:
+            for i in range(len(report_array)):
+                report_array[i] = report_array[i].lstrip('\t')
+            report = report_array[2]
     print(report)
 
 
@@ -166,14 +175,18 @@ def get_default_report(daily_office_hours, max_extra_hours, worked_minutes, amou
     return report
 
 
-def print_extra_hours_balance_in_minutes(profile):
-    bal = get_extra_hours_balance_in_minutes(profile)
-    report = get_report_from_extra_hours_balance_in_minutes(bal)
+def print_extra_hours_balance_in_minutes(profile, details=False):
+    daily_details_dict = None
+    if details:
+        daily_details_dict = {}
+    bal = get_extra_hours_balance_in_minutes(profile, daily_details_dict=daily_details_dict)
+    report = get_report_from_extra_hours_balance_in_minutes(bal, daily_details_dict)
     print(report)
 
 
-def get_extra_hours_balance_in_minutes(profile):
-    grouped_time_cards = time_card_repo.get_profile_time_cards_grouped_by_day(profile)
+def get_extra_hours_balance_in_minutes(profile, daily_details_dict=None):
+    grouped_time_cards = time_card_repo.get_profile_time_cards_grouped_by_day(profile,
+                                                                              end_date=date_utils.get_utc_yesterday())
     all_work_days = date_utils.get_all_dates_between(profile.start_date, date_utils.get_now())
     all_work_days = list(filter(date_utils.is_work_day, all_work_days))
     for work_day in all_work_days:
@@ -194,20 +207,46 @@ def get_extra_hours_balance_in_minutes(profile):
             work_day['cards'] = work_day['cards'][:-1]
         day_balance_in_min = get_worked_time_from_any_cards(work_day['cards']) - total_shift * 60
         total_balance_in_min += day_balance_in_min
+        if daily_details_dict is not None:
+            daily_details_dict[work_day['date']] = day_balance_in_min
     return total_balance_in_min
 
 
-def get_report_from_extra_hours_balance_in_minutes(total_balance_in_min):
-    total_balance = 'Extra hours balance: '
-    if total_balance_in_min < 0:
-        total_balance += '- '
-    else:
-        total_balance += '+ '
-    total_balance += f'{int(abs(total_balance_in_min) // 60)} hours'
-    remainder = int(abs(total_balance_in_min) % 60)
-    if remainder > 0:
-        total_balance += f' and {remainder} minutes'
-    return total_balance
+def minutes_to_hours_and_minutes(elapsed_minutes):
+    hours = int(abs(elapsed_minutes) // 60)
+    minutes = int(abs(elapsed_minutes) % 60)
+    if elapsed_minutes < 0:
+        if hours > 0:
+            hours *= -1
+        else:
+            minutes *= -1
+    return hours, minutes
+
+
+def hours_and_minutes_to_human_readable(hours, minutes):
+    if hours == 0 and minutes == 0:
+        return '0'
+    report = '- ' if hours < 0 or minutes < 0 else '+ '
+    if hours != 0:
+        report = f'{hours} hours'
+        if minutes != 0:
+            report += ' and '
+    if minutes != 0:
+        report += f'{minutes} minutes'
+    return report
+
+
+def get_report_from_extra_hours_balance_in_minutes(total_balance_in_min, daily_details_dict=None):
+    report = 'Extra hours balance: '
+    total_bal_hours, total_bal_min = minutes_to_hours_and_minutes(total_balance_in_min)
+    report += hours_and_minutes_to_human_readable(total_bal_hours, total_bal_min)
+    if daily_details_dict is not None:
+        for date, balance in daily_details_dict.items():
+            h, m = minutes_to_hours_and_minutes(balance)
+            hr = hours_and_minutes_to_human_readable(h, m)
+            if hr != '0':
+                report += f'\n\t{date_utils.datetime_to_string(date, date_format="%d/%m/%Y")}: {hr}'
+    return report
 
 
 def display_time_cards_of_a_day(profile, date):
@@ -224,3 +263,143 @@ def display_time_cards_of_a_day(profile, date):
 def delete_time_card(profile, card_uuid):
     time_card_repo.delete_time_card(profile, card_uuid)
     print(f'Deleted time card with uuid {card_uuid}')
+
+
+def get_max_worked_interval(time_cards):
+    time_cards_in_mins = convert_time_cards_to_minutes(time_cards)
+    max_interval = 0
+    for i in range(0, len(time_cards_in_mins), 2):
+        if i + 1 < len(time_cards_in_mins):
+            max_interval = max(time_cards_in_mins[i + 1] - time_cards_in_mins[i], max_interval)
+    return max_interval
+
+
+def is_empty_result(result):
+    return result.get('class', 'UNKNOWN') == 'UNKNOWN'
+
+
+def get_work_day_status(profile, start_date=None, end_date=None):
+    if end_date is None:
+        end_date = date_utils.get_utc_yesterday()
+    grouped_time_cards = time_card_repo.get_profile_time_cards_grouped_by_day(profile,
+                                                                              start_date=start_date,
+                                                                              end_date=end_date)
+    all_work_days = date_utils.get_all_dates_between(profile.start_date, date_utils.get_now())
+    all_work_days = list(filter(date_utils.is_work_day, all_work_days))
+    for work_day in all_work_days:
+        if work_day not in grouped_time_cards['glossary']:
+            grouped_time_cards['glossary'].add(work_day)
+            grouped_time_cards['results'].append({
+                'date': work_day,
+                'cards': []
+            })
+
+    results = {}
+    last_time_card = None
+    for work_day in grouped_time_cards['results']:
+        result = {'class': 'UNKNOWN'}
+        time_cards = len(work_day['cards'])
+        if is_empty_result(result) and time_cards % 2 != 0:
+            result = {'class': 'ERROR', 'reason': f'Odd number of time cards ({time_cards})'}
+
+        holiday = holiday_repo.get_date_holiday(profile, work_day['date'])
+        is_holiday = holiday is not None
+        has_recorded_absence = absence_repo.has_absence_on_date(profile, work_day['date'])
+
+        if is_empty_result(result) and time_cards == 0 and not has_recorded_absence and not is_holiday:
+            result = {'class': 'ERROR',
+                      'reason': f'Missing time cards, holiday: {is_holiday}, recorded absence: {has_recorded_absence}'}
+
+        if is_holiday:
+            max_shift = holiday.working_hours + profile.max_allowed_extra_hours
+        else:
+            max_shift = profile.daily_office_hours + profile.max_allowed_extra_hours
+        total_worked = get_worked_time_from_any_cards(work_day['cards']) / 60
+
+        if is_empty_result(result) and total_worked > max_shift:
+            result = {'class': 'WARN',
+                      'reason': f'Worked {total_worked:.2f} hours, which is more than the max allowed ({max_shift}).'}
+
+        max_worked_interval = get_max_worked_interval(work_day['cards']) / 60
+        max_allowed_work_block = 6  # FIXME include the '6' hours on the profile (database)
+        if is_empty_result(result) and max_worked_interval > max_allowed_work_block:
+            result = {'class': 'INFO',
+                      'reason': f'Worked {max_worked_interval:.2f} hours straight, which is more than the max allowed ({max_allowed_work_block}).'}
+
+        max_lunch_interval = get_max_worked_interval(work_day['cards'][1:]) / 60
+        if is_empty_result(result) and max_lunch_interval < profile.required_lunch_time:
+            result = {'class': 'INFO',
+                      'reason': f'The biggest break was {max_lunch_interval:.2f} hours, which is less than the required lunch time ({profile.required_lunch_time}).'}
+
+        if last_time_card is not None and time_cards > 0:
+            between_work_days = get_max_worked_interval([last_time_card, work_day['cards'][0]]) / 60
+            if is_empty_result(result) and between_work_days < profile.min_hours_between_working_days:
+                result = {'class': 'INFO',
+                          'reason': f'The break between shifts was of {between_work_days:.2f} hours, which is less than the allowed ({profile.min_hours_between_working_days}).'}
+
+        if time_cards > 0:
+            last_time_card = work_day['cards'][-1]
+        else:
+            last_time_card = None
+
+        if is_empty_result(result):
+            result = {'class': 'OK'}
+
+        results[work_day['date']] = result
+    return results
+
+
+def filter_work_day_status(work_day_status, filter_out_below='OK'):
+    filtered = {}
+    for date, status in work_day_status.items():
+        if filter_out_below is None or filter_out_below.upper() == 'NONE':
+            filtered[date] = status
+        elif filter_out_below.upper() == 'OK':
+            if status['class'] not in ('OK',):
+                filtered[date] = status
+        elif filter_out_below.upper() == 'INFO':
+            if status['class'] not in ('OK', 'INFO'):
+                filtered[date] = status
+        elif filter_out_below.upper() == 'WARN':
+            if status['class'] not in ('OK', 'INFO', 'WARN'):
+                filtered[date] = status
+        elif filter_out_below.upper() == 'ERROR':
+            if status['class'] not in ('OK', 'INFO', 'WARN', 'ERROR'):
+                filtered[date] = status
+        else:
+            raise AttributeError(f'Unknown filter {filter_out_below.upper()}')
+    return filtered
+
+
+def get_report_from_work_day_status(word_day_status):
+    report = 'Work day status:'
+    for date, status in word_day_status.items():
+        reason_str = ''
+        if 'reason' in status:
+            reason_str = f' - {status["reason"]}'
+        report += f'\n\t{date_utils.datetime_to_string(date, date_format="%d/%m/%Y")}: {status["class"]} {reason_str}'
+    if len(word_day_status) == 0:
+        report += f'\n\tNothing to report!'
+    return report
+
+
+def print_work_day_status_report_if_recent_error(profile):
+    work_day_status = get_work_day_status(profile,
+                                          start_date=date_utils.add_days_to_datetime(date_utils.get_utc_now(), -90))
+    error_only = filter_work_day_status(work_day_status, filter_out_below='WARN')
+    if len(error_only) > 0:
+        report = get_report_from_work_day_status(error_only)
+        print('+++++')
+        print(report)
+        print('+++++')
+
+
+def print_work_day_status_report(profile, filter_level=None):
+    work_day_status = get_work_day_status(profile)
+    filtered = filter_work_day_status(work_day_status, filter_out_below=filter_level)
+    report = get_report_from_work_day_status(filtered)
+    print(report)
+
+
+def auto_insert_lunch_time():
+    pass  # TODO make a function to insert the break automatically for profiles with this config enabled

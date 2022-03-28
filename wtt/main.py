@@ -15,15 +15,6 @@ def get_current_profile():
     return profile_service.get_current_profile()
 
 
-def get_error_report():
-    # Error - odd number of points per day
-    # Missing - No point for a work day (excluding holiday and absences)
-    # Illegal - more than 8 + 2 hours per day, 6+ hours straight, no lunch time, lunch < 1, interval between days (<11)
-    # Warning - work on holiday or weekend
-    # OK
-    pass  # TODO make a function to generate this report, this function can accept time filter, e.g. last 3 months
-
-
 def main(argv):
     prog = argv.pop(0)
     parser = argparse.ArgumentParser(prog, description='Simple program with local database to track work time',
@@ -48,6 +39,11 @@ def main(argv):
                               help='The datetime of the time card. Format: dd/mm/YYYY HH:MM:SS', metavar='DATETIME')
     addholi_parser = subparsers.add_parser('addholi', help='Inserts a holiday')
     addabs_parser = subparsers.add_parser('addabs', help='Justifies an absence')
+    wdr_parser = subparsers.add_parser('wdr',
+                                       help='Shows the work day report for a given status level (None ,"OK", "INFO", "WARN", "ERROR")')
+    wdr_parser.add_argument('wdr_filter', type=str, nargs='?', default='OK',
+                            help='Filter out work day reports with severity equal or below the given one',
+                            metavar='FILTER')
 
     args = parser.parse_args(argv)
 
@@ -55,15 +51,19 @@ def main(argv):
         parser.print_help(sys.stdout)
     else:
         cmd = args.cmd.lower()
+
+        if cmd != 'wdr':
+            time_card_service.print_work_day_status_report_if_recent_error(get_current_profile())
+
         if cmd == 'clock':
             time_card_service.clock_in_out(get_current_profile())
             if args.auto_ttco:
                 print('---')
-                time_card_service.print_today_report(get_current_profile())
+                time_card_service.print_today_report(get_current_profile(), from_auto_run=True)
         elif cmd == 'ttco':
             time_card_service.print_today_report(get_current_profile())
         elif cmd == 'ehbal':
-            time_card_service.print_extra_hours_balance_in_minutes(get_current_profile())
+            time_card_service.print_extra_hours_balance_in_minutes(get_current_profile(), details=True)
         elif cmd == 'stc':
             if args.stc_date.lower() == 'today':
                 date = date_utils.get_now()
@@ -81,6 +81,8 @@ def main(argv):
             holiday_service.prompt_and_insert_holiday()
         elif cmd == 'addabs':
             absence_service.prompt_and_insert_absence(get_current_profile())
+        elif cmd == 'wdr':
+            time_card_service.print_work_day_status_report(get_current_profile(), args.wdr_filter)
 
         if args.auto_ehbal and cmd != 'ehbal':
             print('---')
