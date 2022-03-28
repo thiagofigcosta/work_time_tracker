@@ -36,7 +36,7 @@ def convert_time_cards_to_minutes(time_cards):
     return time_cards_in_min
 
 
-def print_today_report(profile, from_auto_run=False):
+def print_today_report(profile, from_auto_run=False, tabs=False):
     if from_auto_run:
         time.sleep(0.3)
     office_hours = profile.daily_office_hours
@@ -56,18 +56,34 @@ def print_today_report(profile, from_auto_run=False):
         if office_hours == 0:
             has_holiday = today_holiday is not None
             report = get_report_for_non_working_day(is_work_day, has_holiday, has_recorded_absence)
+            if not tabs:
+                report = remove_tabs_from_multiline_string(report)
             print(report)
             return
 
     worked_minutes = get_worked_time_from_any_cards(time_cards, profile.auto_insert_lunch_time)
-    report = get_default_report(office_hours, profile.max_allowed_extra_hours, worked_minutes, len(time_cards))
+    break_minutes = 0
+    if len(time_cards) == 2:
+        break_minutes = get_worked_time_from_any_cards([time_cards[-1]])
+    report = get_default_report(office_hours, profile.max_allowed_extra_hours, worked_minutes, break_minutes,
+                                len(time_cards))
     if from_auto_run:
         report_array = report.split('\n', 2)
         if len(report_array) == 3:
             for i in range(len(report_array)):
                 report_array[i] = report_array[i].lstrip('\t')
             report = report_array[2]
+    if not tabs:
+        report = remove_tabs_from_multiline_string(report)
     print(report)
+
+
+def remove_tabs_from_multiline_string(string):
+    string_array = string.split('\n')
+    for i in range(len(string_array)):
+        string_array[i] = string_array[i].lstrip('\t')
+    string = '\n'.join(string_array)
+    return string
 
 
 def get_worked_time_from_any_cards(time_cards, auto_insert_lunch_time=0):
@@ -148,7 +164,7 @@ def get_report_for_non_working_day(is_work_day, has_holiday, has_recorded_absenc
     return report
 
 
-def get_default_report(daily_office_hours, max_extra_hours, worked_minutes, amount_cards):
+def get_default_report(daily_office_hours, max_extra_hours, worked_minutes, break_minutes, amount_cards):
     local_time = date_utils.get_now()
 
     missing_minutes_regular_shift = daily_office_hours * 60 - worked_minutes
@@ -157,7 +173,10 @@ def get_default_report(daily_office_hours, max_extra_hours, worked_minutes, amou
     clock_out_at_regular_shift = date_utils.add_minutes_to_datetime(local_time, missing_minutes_regular_shift)
     clock_out_at_extra_shift = date_utils.add_minutes_to_datetime(local_time, missing_minutes_extra_shift)
 
-    worked_time_str = f'Worked: {time_utils.timestamp_to_human_readable_str(worked_minutes, minutes=True)} ({amount_cards} time cards)'
+    worked_time_str = f'Worked: {time_utils.timestamp_to_human_readable_str(worked_minutes, minutes=True)}'
+    if break_minutes > 0:
+        worked_time_str += f', Current Lunch: {time_utils.timestamp_to_human_readable_str(break_minutes, minutes=True)}'
+    worked_time_str += f' ({amount_cards} time cards)'
     if worked_minutes == 0:
         worked_time_str = 'You haven\'t started to work yet'
 
@@ -175,12 +194,14 @@ def get_default_report(daily_office_hours, max_extra_hours, worked_minutes, amou
     return report
 
 
-def print_extra_hours_balance_in_minutes(profile, details=False):
+def print_extra_hours_balance_in_minutes(profile, details=False, tabs=True):
     daily_details_dict = None
     if details:
         daily_details_dict = {}
     bal = get_extra_hours_balance_in_minutes(profile, daily_details_dict=daily_details_dict)
     report = get_report_from_extra_hours_balance_in_minutes(bal, daily_details_dict)
+    if not tabs:
+        report = remove_tabs_from_multiline_string(report)
     print(report)
 
 
@@ -394,10 +415,12 @@ def print_work_day_status_report_if_recent_error(profile):
         print('+++++')
 
 
-def print_work_day_status_report(profile, filter_level=None):
+def print_work_day_status_report(profile, filter_level=None, tabs=False):
     work_day_status = get_work_day_status(profile)
     filtered = filter_work_day_status(work_day_status, filter_out_below=filter_level)
     report = get_report_from_work_day_status(filtered)
+    if not tabs:
+        report = remove_tabs_from_multiline_string(report)
     print(report)
 
 

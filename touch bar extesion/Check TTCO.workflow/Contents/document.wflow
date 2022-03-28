@@ -59,7 +59,7 @@
 				<key>ActionParameters</key>
 				<dict>
 					<key>COMMAND_STRING</key>
-					<string>/Users/thiagofigcosta/Code/work_time_tracker/venv/bin/python /Users/thiagofigcosta/Code/work_time_tracker/wtt/main.py ttco</string>
+					<string>/Users/thiagofigcosta/Code/work_time_tracker/venv/bin/python /Users/thiagofigcosta/Code/work_time_tracker/wtt/main.py -t ttco</string>
 					<key>CheckedForUserDefaultShell</key>
 					<true/>
 					<key>inputMethod</key>
@@ -460,14 +460,14 @@
 	</array>
 	<key>connectors</key>
 	<dict>
-		<key>20252A3C-B2B5-480D-8298-A69447E6AF90</key>
+		<key>4E0C1052-3CF0-418C-A39B-99AFDB5EBD06</key>
 		<dict>
 			<key>from</key>
 			<string>4554E589-4E03-4BFF-A3D2-3F0F1666F93D - 4554E589-4E03-4BFF-A3D2-3F0F1666F93D</string>
 			<key>to</key>
 			<string>0D3EF470-D8B6-4DC8-AED9-D0FCE1263F3F - 0D3EF470-D8B6-4DC8-AED9-D0FCE1263F3F</string>
 		</dict>
-		<key>78C47A1D-6D0E-419E-AAE0-08668FDE36B8</key>
+		<key>60E03C01-ABC5-4960-A4FD-8E4B246D54D2</key>
 		<dict>
 			<key>from</key>
 			<string>EE3E5FFD-552D-4737-BC63-219C990E217F - EE3E5FFD-552D-4737-BC63-219C990E217F</string>

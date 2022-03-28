@@ -3,11 +3,12 @@
 ### Terminal
 
 You can create an alias to use this tool more easily on terminal, e.g.
+
 ```shell
 alias wtt='/Users/thiagofigcosta/Code/work_time_tracker/venv/bin/python /Users/thiagofigcosta/Code/work_time_tracker/wtt/main.py'
 ```
-Change it for your local path, to add the alias permanently add this command to `~/.bashrc` or `~/.zshrc`
 
+Change it for your local path, to add the alias permanently add this command to `~/.bashrc` or `~/.zshrc`
 
 ### Touch bar extensions
 

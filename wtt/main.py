@@ -24,6 +24,8 @@ def main(argv):
                         help='Automatic display of the extra hours balance')
     parser.add_argument('--auto-ttco', required=False, action='store_false', default=True,
                         help='Automatic display time to clock out after clocking in or out')
+    parser.add_argument('-t', '--no-tabs-on-report', dest='no_tabs', required=False, action='store_false', default=True,
+                        help='Remove tabs from string reports')
 
     subparsers = parser.add_subparsers(dest='cmd', help='sub-commands help')
     clock_parser = subparsers.add_parser('clock', help='Clocks in or out from work')
@@ -59,9 +61,9 @@ def main(argv):
             time_card_service.clock_in_out(get_current_profile())
             if args.auto_ttco:
                 print('---')
-                time_card_service.print_today_report(get_current_profile(), from_auto_run=True)
+                time_card_service.print_today_report(get_current_profile(), from_auto_run=True, tabs=not args.no_tabs)
         elif cmd == 'ttco':
-            time_card_service.print_today_report(get_current_profile())
+            time_card_service.print_today_report(get_current_profile(), tabs=not args.no_tabs)
         elif cmd == 'ehbal':
             time_card_service.print_extra_hours_balance_in_minutes(get_current_profile(), details=True)
         elif cmd == 'stc':

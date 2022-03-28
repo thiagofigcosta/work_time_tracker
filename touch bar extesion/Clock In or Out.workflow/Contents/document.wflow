@@ -170,8 +170,6 @@
 						<string>4</string>
 					</dict>
 				</dict>
-				<key>conversionLabel</key>
-				<integer>0</integer>
 				<key>isViewVisible</key>
 				<integer>1</integer>
 				<key>location</key>
@@ -231,7 +229,7 @@
 				<key>ActionParameters</key>
 				<dict>
 					<key>COMMAND_STRING</key>
-					<string>/Users/thiagofigcosta/Code/work_time_tracker/venv/bin/python /Users/thiagofigcosta/Code/work_time_tracker/wtt/main.py clock</string>
+					<string>/Users/thiagofigcosta/Code/work_time_tracker/venv/bin/python /Users/thiagofigcosta/Code/work_time_tracker/wtt/main.py -t clock</string>
 					<key>CheckedForUserDefaultShell</key>
 					<true/>
 					<key>inputMethod</key>
@@ -341,8 +339,6 @@
 						<string>4</string>
 					</dict>
 				</dict>
-				<key>conversionLabel</key>
-				<integer>0</integer>
 				<key>isViewVisible</key>
 				<integer>1</integer>
 				<key>location</key>
@@ -451,8 +447,6 @@
 						<string>0</string>
 					</dict>
 				</dict>
-				<key>conversionLabel</key>
-				<integer>0</integer>
 				<key>isViewVisible</key>
 				<integer>1</integer>
 				<key>location</key>
@@ -516,6 +510,8 @@
 					<string>OK</string>
 					<key>displayWarning</key>
 					<false/>
+					<key>explanationText</key>
+					<string></string>
 					<key>negativeTitle</key>
 					<string>Cancel</string>
 					<key>questionText</key>
@@ -621,8 +617,6 @@
 						<string>4</string>
 					</dict>
 				</dict>
-				<key>conversionLabel</key>
-				<integer>0</integer>
 				<key>isViewVisible</key>
 				<integer>1</integer>
 				<key>location</key>
@@ -636,26 +630,26 @@
 	</array>
 	<key>connectors</key>
 	<dict>
-		<key>2095899D-629E-4B6B-BB87-73AA5D487B22</key>
+		<key>73A0D8C1-BC3A-4984-AC51-0D4AA64B0679</key>
+		<dict>
+			<key>from</key>
+			<string>9895A9F7-9CD3-4F1C-B2A0-282D18E23B36 - 9895A9F7-9CD3-4F1C-B2A0-282D18E23B36</string>
+			<key>to</key>
+			<string>EE3E5FFD-552D-4737-BC63-219C990E217F - EE3E5FFD-552D-4737-BC63-219C990E217F</string>
+		</dict>
+		<key>B7F025BA-25E0-4620-836F-E1B6AF6FE764</key>
 		<dict>
 			<key>from</key>
 			<string>4554E589-4E03-4BFF-A3D2-3F0F1666F93D - 4554E589-4E03-4BFF-A3D2-3F0F1666F93D</string>
 			<key>to</key>
 			<string>0D3EF470-D8B6-4DC8-AED9-D0FCE1263F3F - 0D3EF470-D8B6-4DC8-AED9-D0FCE1263F3F</string>
 		</dict>
-		<key>8CE5986E-5AB7-445C-B42B-E1326FB907F0</key>
+		<key>E66AD3A0-FA17-428E-AC85-9044D8595B2B</key>
 		<dict>
 			<key>from</key>
 			<string>EE3E5FFD-552D-4737-BC63-219C990E217F - EE3E5FFD-552D-4737-BC63-219C990E217F</string>
 			<key>to</key>
 			<string>4554E589-4E03-4BFF-A3D2-3F0F1666F93D - 4554E589-4E03-4BFF-A3D2-3F0F1666F93D</string>
-		</dict>
-		<key>B0B77DA8-EFFC-4107-AD77-587D3122751C</key>
-		<dict>
-			<key>from</key>
-			<string>9895A9F7-9CD3-4F1C-B2A0-282D18E23B36 - 9895A9F7-9CD3-4F1C-B2A0-282D18E23B36</string>
-			<key>to</key>
-			<string>EE3E5FFD-552D-4737-BC63-219C990E217F - EE3E5FFD-552D-4737-BC63-219C990E217F</string>
 		</dict>
 	</dict>
 	<key>variables</key>
