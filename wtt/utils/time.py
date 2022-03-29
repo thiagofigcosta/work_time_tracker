@@ -34,7 +34,10 @@ def timestamp_to_human_readable_str(timestamp, seconds=True, minutes=False):
     M = tmp2 % 60
     S = tmp1 % 60
     MS = timestamp_ms % 1000
-    out = '' if timestamp_ms > 0 else 'FINISHED'
+    if timestamp_ms > 0:
+        out = ''
+    else:
+        return '0 '
     if D > 0:
         out += '{} days '.format(D)
     if D > 0 and MS == 0 and S == 0 and M == 0 and H > 0:
