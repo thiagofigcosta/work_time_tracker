@@ -249,11 +249,11 @@ def hours_and_minutes_to_human_readable(hours, minutes):
         return '0'
     report = '- ' if hours < 0 or minutes < 0 else '+ '
     if hours != 0:
-        report = f'{hours} hours'
+        report = f'{abs(hours)} hours'
         if minutes != 0:
             report += ' and '
     if minutes != 0:
-        report += f'{minutes} minutes'
+        report += f'{abs(minutes)} minutes'
     return report
 
 

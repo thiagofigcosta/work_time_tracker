@@ -29,12 +29,12 @@ def get_utc_now():
 
 def get_yesterday():
     now = datetime.datetime.now() - datetime.timedelta(days=1)
+    now = datetime.datetime(now.year, now.month, now.day, 23, 59, 59, 999999)
     return set_timezone_on_datetime(now, get_local_timezone())
 
 
 def get_utc_yesterday():
-    now = datetime.datetime.utcnow() - datetime.timedelta(days=1)
-    return set_timezone_on_datetime(now, 'UTC')
+    return convert_datetime_timezone(get_yesterday(), 'UTC')
 
 
 def get_today_interval():
