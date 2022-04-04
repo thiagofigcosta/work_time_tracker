@@ -18,14 +18,17 @@ def get_current_profile():
 def main(argv):
     prog = argv.pop(0)
     parser = argparse.ArgumentParser(prog, description='Simple program with local database to track work time',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                                     # formatter_class=argparse.ArgumentDefaultsHelpFormatter # includes the default by default
+                                     )
 
     parser.add_argument('--auto-ehbal', required=False, action='store_false', default=True,
-                        help='Automatic display of the extra hours balance')
+                        help='Automatic display of the extra hours balance (default: %(default)s)')
     parser.add_argument('--auto-ttco', required=False, action='store_false', default=True,
-                        help='Automatic display time to clock out after clocking in or out')
+                        help='Automatic display time to clock out after clocking in or out (default: %(default)s)')
     parser.add_argument('-t', '--no-tabs-on-report', dest='no_tabs', required=False, action='store_false', default=True,
-                        help='Remove tabs from string reports')
+                        help='Remove tabs from string reports (default: %(default)s)')
+    parser.add_argument('--dont-check-errors', dest='check_errors', required=False, action='store_false', default=True,
+                        help='Check for errors on time cards, if present, print a warn report (default: False)')
 
     subparsers = parser.add_subparsers(dest='cmd', help='sub-commands help')
     clock_parser = subparsers.add_parser('clock', help='Clocks in or out from work')
@@ -33,7 +36,8 @@ def main(argv):
     ehbal_parser = subparsers.add_parser('ehbal', help='Shows the extra hours balance')
     stc_parser = subparsers.add_parser('stc', help='Show time cards for a given day')
     stc_parser.add_argument('stc_date', type=str, nargs='?', default='Today',
-                            help='The date to show time cards. Format: dd/mm/YYYY', metavar='DATE')
+                            help='The date to show time cards. Format: dd/mm/YYYY (default: %(default)s)',
+                            metavar='DATE')
     rmtc_parser = subparsers.add_parser('rmtc', help='Deletes a time card using its uuid')
     rmtc_parser.add_argument('rmtc_uuid', type=str, help='The uuid of a time card to delete', metavar='UUID')
     addtc_parser = subparsers.add_parser('addtc', help='Creates a time card manually')
@@ -44,8 +48,10 @@ def main(argv):
     wdr_parser = subparsers.add_parser('wdr',
                                        help='Shows the work day report for a given status level (None ,"OK", "INFO", "WARN", "ERROR")')
     wdr_parser.add_argument('wdr_filter', type=str, nargs='?', default='OK',
-                            help='Filter out work day reports with severity equal or below the given one',
+                            help='Filter out work day reports with severity equal or below the given one. (default: %(default)s)',
                             metavar='FILTER')
+    auto_clock_out_parser = subparsers.add_parser('coreg',
+                                                  help='Clocks out from work on regular shift time')
 
     args = parser.parse_args(argv)
 
@@ -54,7 +60,7 @@ def main(argv):
     else:
         cmd = args.cmd.lower()
 
-        if cmd != 'wdr':
+        if cmd != 'wdr' and args.check_errors:
             time_card_service.print_work_day_status_report_if_recent_error(get_current_profile())
 
         if cmd == 'clock':
@@ -85,6 +91,8 @@ def main(argv):
             absence_service.prompt_and_insert_absence(get_current_profile())
         elif cmd == 'wdr':
             time_card_service.print_work_day_status_report(get_current_profile(), args.wdr_filter)
+        elif cmd == 'coreg':
+            time_card_service.clock_out_automatically(get_current_profile())
 
         if args.auto_ehbal and cmd != 'ehbal':
             print('---')

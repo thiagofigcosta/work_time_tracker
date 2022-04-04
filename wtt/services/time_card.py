@@ -32,6 +32,28 @@ def clock_in_out_manually(profile, event_timestamp):
         f'Added time card for {profile.first_name} at {date_utils.datetime_to_string(local_tc_event)}')
 
 
+def clock_out_automatically(profile):
+    time_cards = time_card_repo.get_today_time_cards(profile)
+
+    if len(time_cards) % 2 == 0:
+        raise AttributeError(
+            f'There are {len(time_cards)} time cards for today, however, to clock out the amount of cards must be odd')
+    if abs(time_cards[-1].event_timestamp_utc - date_utils.get_utc_now()).seconds < COOLDOWN_IN_SECONDS:
+        raise TimeoutError('Error while storing time card, the clock operation is still on cooldown')
+
+    local_time = date_utils.get_now()
+    worked_minutes = get_worked_time_from_any_cards(time_cards, profile.auto_insert_lunch_time)
+    missing_minutes_regular_shift = profile.daily_office_hours * 60 - worked_minutes
+
+    clock_out_at = date_utils.add_minutes_to_datetime(local_time, missing_minutes_regular_shift)
+    clock_out_at = date_utils.convert_datetime_timezone(clock_out_at, 'UTC')
+
+    time_card = time_card_repo.insert_time_card(profile, 'auto', clock_out_at)
+    local_tc_event = date_utils.convert_datetime_timezone_to_local(time_card.event_timestamp_utc)
+    print(
+        f'Added time card for {profile.first_name} at {date_utils.datetime_to_string(local_tc_event)}')
+
+
 def convert_time_cards_to_minutes(time_cards):
     time_cards_in_min = [time_utils.datetime_to_minutes(el.event_timestamp_utc) for el in time_cards]
     return time_cards_in_min
@@ -168,14 +190,14 @@ def get_report_for_non_working_day(is_work_day, has_holiday, has_recorded_absenc
 def get_default_report(daily_office_hours, max_extra_hours, worked_minutes, break_minutes, amount_cards):
     local_time = date_utils.get_now()
 
-    missing_minutes_regular_shift = daily_office_hours * 60 - worked_minutes
-    missing_minutes_extra_shift = (daily_office_hours + max_extra_hours) * 60 - worked_minutes
+    missing_minutes_regular_shift = max(daily_office_hours * 60 - worked_minutes, 0)
+    missing_minutes_extra_shift = max((daily_office_hours + max_extra_hours) * 60 - worked_minutes, 0)
 
     clock_out_at_regular_shift = date_utils.add_minutes_to_datetime(local_time, missing_minutes_regular_shift)
     clock_out_at_extra_shift = date_utils.add_minutes_to_datetime(local_time, missing_minutes_extra_shift)
 
     worked_time_str = f'Worked: {time_utils.timestamp_to_human_readable_str(worked_minutes, minutes=True)}'
-    if break_minutes > 0:
+    if break_minutes > 0 and worked_minutes <= daily_office_hours * .7 * 60:
         worked_time_str += f', Current Lunch: {time_utils.timestamp_to_human_readable_str(break_minutes, minutes=True)}'
     worked_time_str += f' ({amount_cards} time cards)'
     if worked_minutes == 0:

@@ -29,7 +29,7 @@ def get_profile_time_cards(profile, start_date=None, end_date=None):
     return results
 
 
-def insert_time_card(time_card):
+def persist_time_card(time_card):
     params = time_card.to_database_params()
     fields = '(' + ', '.join([f'"{el}"' for el in TimeCard.GetFields()]) + ')'
     query_insert = f"""
@@ -43,16 +43,19 @@ def insert_time_card(time_card):
     return time_card
 
 
+def insert_time_card(profile, method, event_timestamp):
+    time_card = TimeCard(profile.uuid, method, event_timestamp_utc=event_timestamp)
+    return persist_time_card(time_card)
+
+
 def insert_time_card_from_cli(profile):
     method = 'cli'
     time_card = TimeCard(profile.uuid, method)
-    return insert_time_card(time_card)
+    return persist_time_card(time_card)
 
 
 def insert_time_card_manually(profile, event_timestamp):
-    method = 'manual'
-    time_card = TimeCard(profile.uuid, method, event_timestamp_utc=event_timestamp)
-    return insert_time_card(time_card)
+    return insert_time_card(profile, 'manual', event_timestamp)
 
 
 def get_today_time_cards(profile):
