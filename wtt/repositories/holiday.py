@@ -1,5 +1,6 @@
 from wtt.models.holiday import Holiday
 from wtt.repositories import execute_query
+from wtt.utils import date as date_utils
 
 
 def get_all_holidays():
@@ -40,10 +41,10 @@ def get_date_holiday(profile, date):
             SELECT * FROM holidays
             WHERE "location" = ? AND 
                 ((repeats_every_year AND strftime('%d', "date") = ? AND strftime('%m', "date") = ?) OR 
-                    (NOT repeats_every_year AND "date" = ?))
+                    (NOT repeats_every_year AND strftime('%d/%m/%Y',"date") = ?))
             ORDER BY "working_hours";
         """
-    params = (profile.working_location, date.day, date.month, date)
+    params = (profile.working_location, date.day, date.month, date_utils.datetime_to_string(date, '%d/%m/%Y'))
     results = execute_query(query, params=params, fetch=True)
     if len(results) > 0:
         return Holiday.FromDatabaseObj(results[0])
