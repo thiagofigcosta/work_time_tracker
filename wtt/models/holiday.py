@@ -41,6 +41,7 @@ class Holiday(object):
                 date = input_utils.input_string()
                 date_utils.assert_datetime_string_format(date)
                 date = date_utils.string_to_datetime(date)
+                date = date_utils.set_timezone_on_datetime(date, 'UTC')
                 break
             except ValueError as e:
                 print(e)

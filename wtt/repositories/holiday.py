@@ -44,7 +44,7 @@ def get_date_holiday(profile, date):
                     (NOT repeats_every_year AND strftime('%d/%m/%Y',"date") = ?))
             ORDER BY "working_hours";
         """
-    params = (profile.working_location, date.day, date.month, date_utils.datetime_to_string(date, '%d/%m/%Y'))
+    params = (profile.working_location, f"{date.day:02d}", f"{date.month:02d}", date_utils.datetime_to_string(date, '%d/%m/%Y'))
     results = execute_query(query, params=params, fetch=True)
     if len(results) > 0:
         return Holiday.FromDatabaseObj(results[0])
