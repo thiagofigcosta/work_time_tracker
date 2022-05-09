@@ -27,6 +27,10 @@ class TimeCard(object):
         insertion_method = database_obj.get('insertion_method')
         time_card = TimeCard(uuid=uuid, profile_uuid=profile_uuid, event_timestamp_utc=event_timestamp_utc,
                              insertion_method=insertion_method)
+        try:
+            time_card.event_timestamp_utc = date_utils.convert_datetime_timezone(time_card.event_timestamp_utc, 'UTC')
+        except:
+            pass  # explicitly ignoring
         return time_card
 
     def to_database_params(self):
