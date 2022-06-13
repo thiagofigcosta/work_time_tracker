@@ -2,6 +2,8 @@ from wtt.models.time_card import TimeCard
 from wtt.repositories import execute_query
 from wtt.utils import date as date_utils
 
+SHORT_SEARCH_LIMIT_IN_DAYS = None  # None or number, such as 60
+
 
 def get_all_time_cards():
     query = """

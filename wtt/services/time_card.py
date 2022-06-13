@@ -5,6 +5,7 @@ from wtt.models.time_card import TimeCard
 from wtt.repositories import absence as absence_repo
 from wtt.repositories import holiday as holiday_repo
 from wtt.repositories import time_card as time_card_repo
+from wtt.repositories.time_card import SHORT_SEARCH_LIMIT_IN_DAYS
 from wtt.utils import date as date_utils
 from wtt.utils import time as time_utils
 
@@ -221,17 +222,23 @@ def print_extra_hours_balance_in_minutes(profile, details=False, tabs=True):
     daily_details_dict = None
     if details:
         daily_details_dict = {}
-    bal = get_extra_hours_balance_in_minutes(profile, daily_details_dict=daily_details_dict)
+    bal = get_extra_hours_balance_in_minutes(profile, daily_details_dict=daily_details_dict,
+                                             limit_for_search_days=SHORT_SEARCH_LIMIT_IN_DAYS)
     report = get_report_from_extra_hours_balance_in_minutes(bal, daily_details_dict)
     if not tabs:
         report = remove_tabs_from_multiline_string(report)
     print(report)
 
 
-def get_extra_hours_balance_in_minutes(profile, daily_details_dict=None):
-    grouped_time_cards = time_card_repo.get_profile_time_cards_grouped_by_day(profile,
+def get_extra_hours_balance_in_minutes(profile, daily_details_dict=None, limit_for_search_days=None):
+    if limit_for_search_days is None:
+        start_date = profile.start_date
+    else:
+        start_date = date_utils.add_days_to_datetime(date_utils.get_utc_now(), -limit_for_search_days,
+                                                     to_beginning_of_day=True)
+    grouped_time_cards = time_card_repo.get_profile_time_cards_grouped_by_day(profile, start_date=start_date,
                                                                               end_date=date_utils.get_utc_yesterday())
-    all_work_days = date_utils.get_all_dates_between(profile.start_date, date_utils.get_now())
+    all_work_days = date_utils.get_all_dates_between(start_date, date_utils.get_now())
     all_work_days = list(filter(date_utils.is_work_day, all_work_days))
     for work_day in all_work_days:
         if work_day not in grouped_time_cards['glossary']:
@@ -270,9 +277,9 @@ def minutes_to_hours_and_minutes(elapsed_minutes):
 def hours_and_minutes_to_human_readable(hours, minutes):
     if hours == 0 and minutes == 0:
         return '0'
-    report = '- ' if hours < 0 or minutes < 0 else '+ '
+    report = '-' if hours < 0 or minutes < 0 else '+'
     if hours != 0:
-        report = f'{abs(hours)} hours'
+        report += f'{abs(hours)} hours'
         if minutes != 0:
             report += ' and '
     if minutes != 0:
@@ -328,7 +335,7 @@ def get_work_day_status(profile, start_date=None, end_date=None):
     grouped_time_cards = time_card_repo.get_profile_time_cards_grouped_by_day(profile,
                                                                               start_date=start_date,
                                                                               end_date=end_date)
-    all_work_days = date_utils.get_all_dates_between(profile.start_date, date_utils.get_now())
+    all_work_days = date_utils.get_all_dates_between(start_date, date_utils.get_now())
     all_work_days = list(filter(date_utils.is_work_day, all_work_days))
     for work_day in all_work_days:
         if work_day not in grouped_time_cards['glossary']:
@@ -429,7 +436,8 @@ def get_report_from_work_day_status(word_day_status):
 
 def print_work_day_status_report_if_recent_error(profile):
     work_day_status = get_work_day_status(profile,
-                                          start_date=date_utils.add_days_to_datetime(date_utils.get_utc_now(), -90))
+                                          start_date=date_utils.add_days_to_datetime(date_utils.get_utc_now(), -90,
+                                                                                     to_beginning_of_day=True))
     error_only = filter_work_day_status(work_day_status, filter_out_below='WARN')
     if len(error_only) > 0:
         report = get_report_from_work_day_status(error_only)
@@ -439,7 +447,10 @@ def print_work_day_status_report_if_recent_error(profile):
 
 
 def print_work_day_status_report(profile, filter_level=None, tabs=False):
-    work_day_status = get_work_day_status(profile)
+    start_date = date_utils.add_days_to_datetime(date_utils.get_utc_now(), -SHORT_SEARCH_LIMIT_IN_DAYS,
+                                                 to_beginning_of_day=True)
+    # start_date = None
+    work_day_status = get_work_day_status(profile, start_date=start_date)
     filtered = filter_work_day_status(work_day_status, filter_out_below=filter_level)
     report = get_report_from_work_day_status(filtered)
     if not tabs:

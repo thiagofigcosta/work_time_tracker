@@ -92,11 +92,15 @@ def is_work_day(date):
 
 
 def add_minutes_to_datetime(date, minutes):
-    return date + datetime.timedelta(minutes=minutes)
+    calculated_date = date + datetime.timedelta(minutes=minutes)
+    return calculated_date
 
 
-def add_days_to_datetime(date, days):
-    return date + datetime.timedelta(days=days)
+def add_days_to_datetime(date, days, to_beginning_of_day=False):
+    calculated_date = date + datetime.timedelta(days=days)
+    if to_beginning_of_day:
+        calculated_date = date_to_beginning_of_day(calculated_date)
+    return calculated_date
 
 
 def get_all_dates_between(start_date, end_date):
@@ -109,3 +113,7 @@ def get_all_dates_between(start_date, end_date):
         current_date += datetime.timedelta(days=1)
 
     return dates
+
+
+def date_to_beginning_of_day(date_to_change):
+    return datetime.datetime(date_to_change.year, date_to_change.month, date_to_change.day, 0, 0, 0)
