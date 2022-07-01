@@ -1,5 +1,6 @@
 from wtt.models.absence import Absence
 from wtt.repositories import execute_query
+from wtt.utils import date as date_utils
 
 
 def get_all_absences():
@@ -25,9 +26,9 @@ def get_profile_absences(profile):
 def has_absence_on_date(profile, date):
     query = """
             SELECT * FROM absences
-            WHERE profile_uuid = ? AND "date" = ?;
+            WHERE profile_uuid = ? AND strftime('%d/%m/%Y',"date") = ?;
         """
-    params = (profile.uuid, date)
+    params = (profile.uuid, date_utils.datetime_to_string(date, '%d/%m/%Y'))
     results = execute_query(query, params=params, fetch=True)
     result = len(results) > 0
     return result
