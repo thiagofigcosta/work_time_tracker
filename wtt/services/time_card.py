@@ -252,8 +252,11 @@ def get_extra_hours_balance_in_minutes(profile, daily_details_dict=None, limit_f
     for work_day in grouped_time_cards['results']:
         total_shift = profile.daily_office_hours
         holiday = holiday_repo.get_date_holiday(profile, work_day['date'])
+        has_authorized_absence = absence_repo.has_authorized_absence_on_date(profile, work_day['date'])
         if holiday is not None:
             total_shift = holiday.working_hours
+        if has_authorized_absence:
+            total_shift = 0
         if len(work_day['cards']) % 2 != 0:  # avoid dealing with incorrect time_cards
             work_day['cards'] = work_day['cards'][:-1]
         day_balance_in_min = get_worked_time_from_any_cards(work_day['cards']) - total_shift * 60
@@ -356,6 +359,7 @@ def get_work_day_status(profile, start_date=None, end_date=None):
         holiday = holiday_repo.get_date_holiday(profile, work_day['date'])
         is_holiday = holiday is not None
         has_recorded_absence = absence_repo.has_absence_on_date(profile, work_day['date'])
+        has_authorized_absence = absence_repo.has_authorized_absence_on_date(profile, work_day['date'])
 
         if is_empty_result(result) and time_cards == 0 and not has_recorded_absence and not is_holiday:
             result = {'class': 'ERROR',
@@ -365,6 +369,9 @@ def get_work_day_status(profile, start_date=None, end_date=None):
             max_shift = holiday.working_hours + profile.max_allowed_extra_hours
         else:
             max_shift = profile.daily_office_hours + profile.max_allowed_extra_hours
+
+        if has_authorized_absence:
+            max_shift = profile.max_allowed_extra_hours
         total_worked = get_worked_time_from_any_cards(work_day['cards']) / 60
 
         if is_empty_result(result) and total_worked > max_shift:

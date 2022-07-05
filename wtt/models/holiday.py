@@ -49,7 +49,7 @@ class Holiday(object):
         location = input_utils.input_string()
         print('Enter how many hours you need to work on this holiday (0): ')
         working_hours = input_utils.input_number(greater_or_eq=0, lower_or_eq=24)
-        print('This holiday occurs every year?: ')
+        print('Does this holiday occurs every year?: ')
         repeats_every_year = input_utils.input_boolean()
         holiday = Holiday(uuid=uuid, description=description, date=date, location=location,
                           working_hours=working_hours, repeats_every_year=repeats_every_year)

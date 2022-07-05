@@ -4,7 +4,7 @@ from wtt.utils import uuid as uuid_utils
 
 
 class Absence(object):
-    def __init__(self, profile_uuid, date, uuid=None, description=None):
+    def __init__(self, profile_uuid, date, uuid=None, description=None, authorized=False):
         if uuid is None:
             uuid = uuid_utils.random_uuid()
         if type(date) is str:
@@ -14,6 +14,7 @@ class Absence(object):
         self.profile_uuid = profile_uuid
         self.date = date
         self.description = description
+        self.authorized = bool(authorized)
 
     @staticmethod
     def FromDatabaseObj(database_obj):
@@ -21,7 +22,8 @@ class Absence(object):
         profile_uuid = database_obj.get('profile_uuid')
         date = database_obj.get('date')
         description = database_obj.get('description')
-        absence = Absence(uuid=uuid, profile_uuid=profile_uuid, date=date, description=description)
+        authorized = database_obj.get('authorized')
+        absence = Absence(uuid=uuid, profile_uuid=profile_uuid, date=date, description=description, authorized=authorized)
         return absence
 
     @staticmethod
@@ -42,7 +44,9 @@ class Absence(object):
                 print(e)
         print('Enter a description for your absence: ')
         description = input_utils.input_string()
-        absence = Absence(uuid=uuid, profile_uuid=profile_uuid, date=date, description=description)
+        print('Is this absence authorized (don\'t have to "pay" the hours): ')
+        authorized = input_utils.input_boolean()
+        absence = Absence(uuid=uuid, profile_uuid=profile_uuid, date=date, description=description,authorized=authorized)
         return absence
 
     def to_database_params(self):
@@ -51,10 +55,11 @@ class Absence(object):
         params.append(self.profile_uuid)
         params.append(self.date)
         params.append(self.description)
+        params.append(self.authorized)
         params = tuple(params)
         return params
 
     @staticmethod
     def GetFields():
-        fields = ("uuid", "profile_uuid", "date", "description")
+        fields = ("uuid", "profile_uuid", "date", "description", "authorized")
         return fields

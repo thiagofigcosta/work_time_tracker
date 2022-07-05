@@ -80,7 +80,7 @@ def build_database():
                 "date" DATE NOT NULL,
                 "location" VARCHAR(50) NOT NULL,
                 "working_hours" INT NOT NULL DEFAULT 0,
-                "repeats_every_year" BOOL DEFAULT True
+                "repeats_every_year" BOOL NOT NULL DEFAULT True
             );
             """
 
@@ -98,7 +98,8 @@ def build_database():
                     "uuid" UUID PRIMARY KEY,
                     "profile_uuid" UUID NOT NULL,
                     "date" DATE NOT NULL,
-                    "description" VARCHAR(300) NULL
+                    "description" VARCHAR(300) NULL,
+                    "authorized" BOOL NOT NULL DEFAULT False
                 );
                 """
     execute_query_with_conn(conn, create_profile_table, close_conn=False)

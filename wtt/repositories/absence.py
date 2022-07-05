@@ -34,6 +34,17 @@ def has_absence_on_date(profile, date):
     return result
 
 
+def has_authorized_absence_on_date(profile, date):
+    query = """
+            SELECT * FROM absences
+            WHERE profile_uuid = ? AND strftime('%d/%m/%Y',"date") = ? AND authorized = True;
+        """
+    params = (profile.uuid, date_utils.datetime_to_string(date, '%d/%m/%Y'))
+    results = execute_query(query, params=params, fetch=True)
+    result = len(results) > 0
+    return result
+
+
 def create_absence(absence):
     params = absence.to_database_params()
     fields = '(' + ', '.join([f'"{el}"' for el in Absence.GetFields()]) + ')'
