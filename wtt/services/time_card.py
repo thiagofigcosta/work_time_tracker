@@ -33,7 +33,7 @@ def clock_in_out_manually(profile, event_timestamp):
         f'Added time card for {profile.first_name} at {date_utils.datetime_to_string(local_tc_event)}')
 
 
-def clock_out_automatically(profile):
+def clock_out_automatically(profile, clock_early=False):
     time_cards = time_card_repo.get_today_time_cards(profile)
 
     if len(time_cards) % 2 == 0:
@@ -42,14 +42,18 @@ def clock_out_automatically(profile):
     if abs(time_cards[-1].event_timestamp_utc - date_utils.get_utc_now()).seconds < COOLDOWN_IN_SECONDS:
         raise TimeoutError('Error while storing time card, the clock operation is still on cooldown')
 
+    insertion_method = 'auto'
     local_time = date_utils.get_now()
     worked_minutes = get_worked_time_from_any_cards(time_cards, profile.auto_insert_lunch_time)
     missing_minutes_regular_shift = profile.daily_office_hours * 60 - worked_minutes
+    if clock_early:
+        missing_minutes_regular_shift -= profile.required_lunch_time * 60
+        insertion_method += ' (earlier)'
 
     clock_out_at = date_utils.add_minutes_to_datetime(local_time, missing_minutes_regular_shift)
     clock_out_at = date_utils.convert_datetime_timezone(clock_out_at, 'UTC')
 
-    time_card = time_card_repo.insert_time_card(profile, 'auto', clock_out_at)
+    time_card = time_card_repo.insert_time_card(profile, insertion_method, clock_out_at)
     local_tc_event = date_utils.convert_datetime_timezone_to_local(time_card.event_timestamp_utc)
     print(
         f'Added time card for {profile.first_name} at {date_utils.datetime_to_string(local_tc_event)}')

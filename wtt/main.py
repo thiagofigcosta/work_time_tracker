@@ -52,6 +52,8 @@ def main(argv):
                             metavar='FILTER')
     auto_clock_out_parser = subparsers.add_parser('coreg',
                                                   help='Clocks out from work on regular shift time')
+    auto_clock_out_early_parser = subparsers.add_parser('coearly',
+                                                        help='Clocks out from work earlier, regular shift minus launch Ïtime')
 
     args = parser.parse_args(argv)
 
@@ -93,6 +95,8 @@ def main(argv):
             time_card_service.print_work_day_status_report(get_current_profile(), args.wdr_filter)
         elif cmd == 'coreg':
             time_card_service.clock_out_automatically(get_current_profile())
+        elif cmd == 'coearly':
+            time_card_service.clock_out_automatically(get_current_profile(), clock_early=True)
 
         if args.auto_ehbal and cmd != 'ehbal':
             print('---')

@@ -8,11 +8,11 @@
 			<key>NSBackgroundColorName</key>
 			<string>background</string>
 			<key>NSIconName</key>
-			<string>NSTouchBarClose</string>
+			<string>NSTouchBarQuickLook</string>
 			<key>NSMenuItem</key>
 			<dict>
 				<key>default</key>
-				<string>Clock Out Reg</string>
+				<string>Clock Out Early</string>
 			</dict>
 			<key>NSMessage</key>
 			<string>runWorkflowAsService</string>

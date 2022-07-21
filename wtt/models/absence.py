@@ -23,7 +23,8 @@ class Absence(object):
         date = database_obj.get('date')
         description = database_obj.get('description')
         authorized = database_obj.get('authorized')
-        absence = Absence(uuid=uuid, profile_uuid=profile_uuid, date=date, description=description, authorized=authorized)
+        absence = Absence(uuid=uuid, profile_uuid=profile_uuid, date=date, description=description,
+                          authorized=authorized)
         return absence
 
     @staticmethod
@@ -46,7 +47,8 @@ class Absence(object):
         description = input_utils.input_string()
         print('Is this absence authorized (don\'t have to "pay" the hours): ')
         authorized = input_utils.input_boolean()
-        absence = Absence(uuid=uuid, profile_uuid=profile_uuid, date=date, description=description,authorized=authorized)
+        absence = Absence(uuid=uuid, profile_uuid=profile_uuid, date=date, description=description,
+                          authorized=authorized)
         return absence
 
     def to_database_params(self):
