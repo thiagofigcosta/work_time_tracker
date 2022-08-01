@@ -62,7 +62,7 @@ def main(argv):
     else:
         cmd = args.cmd.lower()
 
-        if cmd != 'wdr' and args.check_errors:
+        if cmd not in ('wdr', 'addtc') and args.check_errors:
             time_card_service.print_work_day_status_report_if_recent_error(get_current_profile())
 
         if cmd == 'clock':

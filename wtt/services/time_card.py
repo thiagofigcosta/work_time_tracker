@@ -27,6 +27,7 @@ def clock_in_out(profile):
 def clock_in_out_manually(profile, event_timestamp):
     event_timestamp = date_utils.string_to_datetime(event_timestamp, '%d/%m/%Y %H:%M:%S')
     event_timestamp = date_utils.set_timezone_on_datetime(event_timestamp, date_utils.get_local_timezone())
+    event_timestamp = date_utils.convert_datetime_timezone(event_timestamp)
     time_card = time_card_repo.insert_time_card_manually(profile, event_timestamp)
     local_tc_event = date_utils.convert_datetime_timezone_to_local(time_card.event_timestamp_utc)
     print(
