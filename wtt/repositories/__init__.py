@@ -1,4 +1,5 @@
 import errno
+import json
 import os
 import sqlite3
 from pathlib import Path
@@ -11,7 +12,22 @@ if not os.path.exists(wtt_dir):
         if e.errno != errno.EEXIST:
             raise e
 
-DATABASE_PATH = os.getenv('DATABASE_NAME', os.path.join(wtt_dir, 'wtt_records.db'))
+SETTINGS_PATH = os.getenv('SETTINGS_FILE', os.path.join(wtt_dir, 'settings.json'))
+DATABASE_PATH = None
+
+if os.path.exists(SETTINGS_PATH):
+    try:
+        with open(SETTINGS_PATH, 'r') as f:
+            settings = json.load(f)
+            if 'database_path' in settings and DATABASE_PATH is None:
+                DATABASE_PATH = settings['database_path']
+            if 'database_file' in settings and DATABASE_PATH is None:
+                DATABASE_PATH = os.path.join(wtt_dir, settings['database_file'])
+    except:
+        pass
+
+if DATABASE_PATH is None:
+    DATABASE_PATH = os.getenv('DATABASE_FILE', os.path.join(wtt_dir, 'wtt_records.db'))
 
 
 def dict_factory(cursor, row):
