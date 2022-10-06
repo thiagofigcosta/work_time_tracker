@@ -117,3 +117,17 @@ def get_all_dates_between(start_date, end_date):
 
 def date_to_beginning_of_day(date_to_change):
     return datetime.datetime(date_to_change.year, date_to_change.month, date_to_change.day, 0, 0, 0)
+
+
+def get_lowest_date(date1, date2):
+    if date1 < date2:
+        return date1
+    else:
+        return date2
+
+
+def get_highest_date(date1, date2):
+    if date1 > date2:
+        return date1
+    else:
+        return date2

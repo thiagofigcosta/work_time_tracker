@@ -94,18 +94,18 @@ class Profile(object):
         working_location = input_utils.input_string()
         while True:
             try:
-                print('Enter the start date (dd/MM/yyyy): ')
+                print('Enter the job start date (dd/MM/yyyy): ')
                 start_date = input_utils.input_string()
                 date_utils.assert_datetime_string_format(start_date)
                 start_date = date_utils.string_to_datetime(start_date)
                 break
             except ValueError as e:
                 print(e)
-        print('Enter your daily shift: ')
+        print('Enter your daily shift (hours): ')
         daily_office_hours = input_utils.input_number(greater_or_eq=1, lower_or_eq=24)
-        print('Enter your required lunch time: ')
+        print('Enter your required lunch time (hours): ')
         required_lunch_time = input_utils.input_number(greater_or_eq=0, lower_or_eq=24)
-        print('Enter the automatic lunch time insertion: ')
+        print('Enter the automatic lunch time insertion (hours): ')
         auto_insert_lunch_time = input_utils.input_number(greater_or_eq=0, lower_or_eq=24)
         print('Enter the max allowed daily extra hours: ')
         max_allowed_extra_hours = input_utils.input_number(greater_or_eq=0, lower_or_eq=24)

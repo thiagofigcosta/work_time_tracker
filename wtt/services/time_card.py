@@ -1,3 +1,4 @@
+import math
 import os
 import time
 
@@ -92,10 +93,10 @@ def print_today_report(profile, from_auto_run=False, tabs=False):
 
     worked_minutes = get_worked_time_from_any_cards(time_cards, profile.auto_insert_lunch_time)
     break_minutes = 0
-    if len(time_cards) == 2:
+    if len(time_cards) >= 2:  # TODO should be len(time_cards) == 2: ???
         break_minutes = get_worked_time_from_any_cards([time_cards[-1]])
     report = get_default_report(office_hours, profile.max_allowed_extra_hours, worked_minutes, break_minutes,
-                                len(time_cards))
+                                len(time_cards), profile.required_lunch_time)
     if from_auto_run:
         report_array = report.split('\n', 2)
         if len(report_array) == 3:
@@ -193,33 +194,60 @@ def get_report_for_non_working_day(is_work_day, has_holiday, has_recorded_absenc
     return report
 
 
-def get_default_report(daily_office_hours, max_extra_hours, worked_minutes, break_minutes, amount_cards):
+def get_default_report(daily_office_hours, max_extra_hours, worked_minutes, break_minutes, amount_cards,
+                       required_lunch):
     local_time = date_utils.get_now()
 
-    missing_minutes_regular_shift = max(daily_office_hours * 60 - worked_minutes, 0)
-    missing_minutes_extra_shift = max((daily_office_hours + max_extra_hours) * 60 - worked_minutes, 0)
+    missing_lunch = 0
+    missing_lunch_str = ""
+    if required_lunch > 0:
+        missing_lunch = int(math.ceil(required_lunch * 60 - break_minutes))
+        missing_lunch_str = f", missing {missing_lunch} min"
+
+    missing_minutes_regular_no_lunch_shift = max(daily_office_hours * 60 - worked_minutes, 0)
+    missing_minutes_extra_no_lunch_shift = max((daily_office_hours + max_extra_hours) * 60 - worked_minutes, 0)
+    missing_minutes_regular_shift = missing_minutes_regular_no_lunch_shift + missing_lunch
+    missing_minutes_extra_shift = missing_minutes_extra_no_lunch_shift + missing_lunch
 
     clock_out_at_regular_shift = date_utils.add_minutes_to_datetime(local_time, missing_minutes_regular_shift)
     clock_out_at_extra_shift = date_utils.add_minutes_to_datetime(local_time, missing_minutes_extra_shift)
+    clock_out_at_regular_no_lunch_shift = date_utils.add_minutes_to_datetime(local_time,
+                                                                             missing_minutes_regular_no_lunch_shift)
+    clock_out_at_extra_no_lunch_shift = date_utils.add_minutes_to_datetime(local_time,
+                                                                           missing_minutes_extra_no_lunch_shift)
 
     worked_time_str = f'Worked: {time_utils.timestamp_to_human_readable_str(worked_minutes, minutes=True)}'
     if break_minutes > 0 and worked_minutes <= daily_office_hours * .7 * 60:
         worked_time_str += f', Current Lunch: {time_utils.timestamp_to_human_readable_str(break_minutes, minutes=True)}'
-    worked_time_str += f' ({amount_cards} time cards)'
+    worked_time_str += f'{missing_lunch_str} ({amount_cards} time cards)'
     if worked_minutes == 0:
         worked_time_str = 'You haven\'t started to work yet'
+
+    launch_str = ""
+    if missing_lunch > 0:
+        launch_str = f" + {missing_lunch}min lunch time"
+
+    no_lunch_shift_str = ""
+    no_lunch_xtra_shift_str = ""
+    if missing_lunch > 0:
+        no_lunch_shift_str = f"""\n    No-lunch shift ({daily_office_hours}h): 
+        Clock out at: {date_utils.datetime_to_string(clock_out_at_regular_no_lunch_shift, date_format='%H:%M:%S')}
+        Missing: {time_utils.timestamp_to_human_readable_str(missing_minutes_regular_no_lunch_shift, minutes=True)}"""
+        no_lunch_xtra_shift_str = f"""\n    No-lunch extra shift ({daily_office_hours + max_extra_hours}h):        
+        Clock out at: {date_utils.datetime_to_string(clock_out_at_extra_no_lunch_shift, date_format='%H:%M:%S')}
+        Missing: {time_utils.timestamp_to_human_readable_str(missing_minutes_extra_no_lunch_shift, minutes=True)}"""
 
     report = f"""Now: {date_utils.datetime_to_string(local_time)}
     
     {worked_time_str}
     
-    Regular shift ({daily_office_hours}h): 
+    Regular shift ({daily_office_hours}h{launch_str}): 
         Clock out at: {date_utils.datetime_to_string(clock_out_at_regular_shift, date_format='%H:%M:%S')}
-        Missing: {time_utils.timestamp_to_human_readable_str(missing_minutes_regular_shift, minutes=True)}
+        Missing: {time_utils.timestamp_to_human_readable_str(missing_minutes_regular_shift, minutes=True)}{no_lunch_shift_str} 
         
-    Extra hours shift ({daily_office_hours + max_extra_hours}h): 
+    Extra hours shift ({daily_office_hours + max_extra_hours}h{launch_str}): 
         Clock out at: {date_utils.datetime_to_string(clock_out_at_extra_shift, date_format='%H:%M:%S')}
-        Missing: {time_utils.timestamp_to_human_readable_str(missing_minutes_extra_shift, minutes=True)}"""
+        Missing: {time_utils.timestamp_to_human_readable_str(missing_minutes_extra_shift, minutes=True)}{no_lunch_xtra_shift_str} """
     return report
 
 
@@ -448,8 +476,10 @@ def get_report_from_work_day_status(word_day_status):
 
 def print_work_day_status_report_if_recent_error(profile):
     work_day_status = get_work_day_status(profile,
-                                          start_date=date_utils.add_days_to_datetime(date_utils.get_utc_now(), -90,
-                                                                                     to_beginning_of_day=True))
+                                          start_date=date_utils.get_highest_date(
+                                              date_utils.add_days_to_datetime(date_utils.get_utc_now(), -90,
+                                                                              to_beginning_of_day=True),
+                                              profile.start_date))
     error_only = filter_work_day_status(work_day_status, filter_out_below='WARN')
     if len(error_only) > 0:
         report = get_report_from_work_day_status(error_only)

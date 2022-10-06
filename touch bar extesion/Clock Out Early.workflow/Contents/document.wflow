@@ -229,7 +229,7 @@
 				<key>ActionParameters</key>
 				<dict>
 					<key>COMMAND_STRING</key>
-					<string>/Users/thiagofigcosta/Code/work_time_tracker/venv/bin/python /Users/thiagofigcosta/Code/work_time_tracker/wtt/main.py -t coearly</string>
+					<string>/usr/bin/python3 "/Users/thiagofigcosta/Library/CloudStorage/GoogleDrive-thiagofigcosta@google.com/My Drive/gDrive Data/Personal Code/work_time_tracker/wtt/main.py" -t coearly</string>
 					<key>CheckedForUserDefaultShell</key>
 					<true/>
 					<key>inputMethod</key>
@@ -630,21 +630,21 @@
 	</array>
 	<key>connectors</key>
 	<dict>
-		<key>025FD3F7-F0C4-4F49-B281-9CF3122DBE98</key>
-		<dict>
-			<key>from</key>
-			<string>9895A9F7-9CD3-4F1C-B2A0-282D18E23B36 - 9895A9F7-9CD3-4F1C-B2A0-282D18E23B36</string>
-			<key>to</key>
-			<string>EE3E5FFD-552D-4737-BC63-219C990E217F - EE3E5FFD-552D-4737-BC63-219C990E217F</string>
-		</dict>
-		<key>0B3F100A-79C0-4169-8CE1-8BCF1BB5C97B</key>
+		<key>D4B345B5-A240-4190-A64F-878B273C17D4</key>
 		<dict>
 			<key>from</key>
 			<string>EE3E5FFD-552D-4737-BC63-219C990E217F - EE3E5FFD-552D-4737-BC63-219C990E217F</string>
 			<key>to</key>
 			<string>4554E589-4E03-4BFF-A3D2-3F0F1666F93D - 4554E589-4E03-4BFF-A3D2-3F0F1666F93D</string>
 		</dict>
-		<key>9D75FD0B-7299-48AD-94B4-1953DFFA9D4A</key>
+		<key>DDB533A8-C8DB-47D0-9548-43921A4533BB</key>
+		<dict>
+			<key>from</key>
+			<string>9895A9F7-9CD3-4F1C-B2A0-282D18E23B36 - 9895A9F7-9CD3-4F1C-B2A0-282D18E23B36</string>
+			<key>to</key>
+			<string>EE3E5FFD-552D-4737-BC63-219C990E217F - EE3E5FFD-552D-4737-BC63-219C990E217F</string>
+		</dict>
+		<key>FF2C6D46-353F-4D64-A609-0F89640EDC42</key>
 		<dict>
 			<key>from</key>
 			<string>4554E589-4E03-4BFF-A3D2-3F0F1666F93D - 4554E589-4E03-4BFF-A3D2-3F0F1666F93D</string>
