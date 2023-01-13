@@ -27,6 +27,10 @@ def get_utc_now():
     return set_timezone_on_datetime(now, 'UTC')
 
 
+def get_utc_tomorrow():
+    return add_days_to_datetime(get_utc_now(), 1)
+
+
 def get_yesterday():
     now = datetime.datetime.now() - datetime.timedelta(days=1)
     now = datetime.datetime(now.year, now.month, now.day, 23, 59, 59, 999999)
@@ -43,8 +47,8 @@ def get_today_interval():
 
 
 def get_day_interval_from_date(date):
-    start_date = datetime.datetime(date.year, date.month, date.day, 0, 0, 0)
-    end_date = datetime.datetime(date.year, date.month, date.day, 23, 59, 59, 999999)
+    start_date = datetime.datetime(date.year, date.month, date.day, 0, 0, 0, tzinfo=date.tzinfo)
+    end_date = datetime.datetime(date.year, date.month, date.day, 23, 59, 59, 999999, tzinfo=date.tzinfo)
     return [start_date, end_date]
 
 
@@ -54,8 +58,11 @@ def assert_valid_timezone(timezone):
 
 
 def set_timezone_on_datetime(date, timezone):
-    timezone = pytz.timezone(timezone)
-    localized = timezone.localize(date)
+    if is_offset_naive_date(date):
+        timezone = pytz.timezone(timezone)
+        localized = timezone.localize(date)
+    else:
+        localized = date
     return localized
 
 
@@ -116,10 +123,33 @@ def get_all_dates_between(start_date, end_date):
 
 
 def date_to_beginning_of_day(date_to_change):
-    return datetime.datetime(date_to_change.year, date_to_change.month, date_to_change.day, 0, 0, 0)
+    return datetime.datetime(date_to_change.year, date_to_change.month, date_to_change.day, 0, 0, 0,
+                             tzinfo=date_to_change.tzinfo)
+
+
+def is_offset_naive_date(date):
+    return date.tzinfo is None or date.tzinfo.utcoffset(date) is None
+
+
+def is_offset_aware_date(date):
+    return not is_offset_naive_date(date)
+
+
+def set_timezone_on_datetime_from_datetime(date, localized_date):
+    return set_timezone_on_datetime(date, str(localized_date.tzinfo))
+
+
+def make_naive_and_aware_comparable(date1, date2):
+    if is_offset_naive_date(date1) != is_offset_naive_date(date2):
+        if is_offset_naive_date(date1):
+            date1 = set_timezone_on_datetime_from_datetime(date1, date2)
+        else:
+            date2 = set_timezone_on_datetime_from_datetime(date2, date1)
+    return date1, date2
 
 
 def get_lowest_date(date1, date2):
+    date1, date2 = make_naive_and_aware_comparable(date1, date2)
     if date1 < date2:
         return date1
     else:
@@ -127,6 +157,7 @@ def get_lowest_date(date1, date2):
 
 
 def get_highest_date(date1, date2):
+    date1, date2 = make_naive_and_aware_comparable(date1, date2)
     if date1 > date2:
         return date1
     else:

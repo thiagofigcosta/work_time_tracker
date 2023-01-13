@@ -23,6 +23,20 @@ def get_profile_absences(profile):
     return results
 
 
+def get_absence_on_date(profile, date):
+    query = """
+            SELECT * FROM absences
+            WHERE profile_uuid = ? AND strftime('%d/%m/%Y',"date") = ?;
+        """
+    params = (profile.uuid, date_utils.datetime_to_string(date, '%d/%m/%Y'))
+    results = execute_query(query, params=params, fetch=True)
+    if len(results) > 0:
+        abs = Absence.FromDatabaseObj(results[0])
+    else:
+        abs = None
+    return abs
+
+
 def has_absence_on_date(profile, date):
     query = """
             SELECT * FROM absences

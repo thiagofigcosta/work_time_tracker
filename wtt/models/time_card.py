@@ -44,8 +44,11 @@ class TimeCard(object):
         params = tuple(params)
         return params
 
+    def get_localized_timestamp(self):
+        return date_utils.convert_datetime_timezone_to_local(self.event_timestamp_utc)
+
     def __str__(self):
-        converted_date = date_utils.convert_datetime_timezone_to_local(self.event_timestamp_utc)
+        converted_date = self.get_localized_timestamp()
         converted_date = date_utils.datetime_to_string(converted_date)
         string = f'uuid: {self.uuid} | event_timestamp: {converted_date} | profile_uuid: {self.profile_uuid} | insertion_method: {self.insertion_method}'
         return string

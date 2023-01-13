@@ -1,6 +1,8 @@
 import sys
 import time as time_lib
 
+import math
+
 try:  # if Python >= 3.3 uses the new high-res counter and keep running even when thread sleeps
     from time import perf_counter as _time_time
 except ImportError:  # else select highest available resolution counter
@@ -16,6 +18,23 @@ def time():
 
 def delta(previous_time):
     return _time_time() - previous_time
+
+
+def hours_to_hours_and_minutes_str(hours):
+    negative = hours < 0
+    minutes = int(math.ceil(abs(hours) * 60))
+    hours = minutes // 60
+    minutes = minutes % 60
+    out = '- ' if negative else ''
+    if hours > 0:
+        out += f'{hours} hours'
+        if minutes > 0:
+            out += ' and '
+    if minutes > 0:
+        out += f'{minutes} minutes'
+    elif hours == 0:
+        out = '0 hours'
+    return out
 
 
 def timestamp_to_human_readable_str(timestamp, seconds=True, minutes=False):

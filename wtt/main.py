@@ -46,7 +46,7 @@ def main(argv):
     addholi_parser = subparsers.add_parser('addholi', help='Inserts a holiday')
     addabs_parser = subparsers.add_parser('addabs', help='Justifies an absence')
     wdr_parser = subparsers.add_parser('wdr',
-                                       help='Shows the work day report for a given status level (None ,"OK", "INFO", "WARN", "ERROR")')
+                                       help='Shows the work day report for a given status level (None ,"OK", "INFO", "WARN", "ERROR", "VERBOSE")')
     wdr_parser.add_argument('wdr_filter', type=str, nargs='?', default='OK',
                             help='Filter out work day reports with severity equal or below the given one. (default: %(default)s)',
                             metavar='FILTER')

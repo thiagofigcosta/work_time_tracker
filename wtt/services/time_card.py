@@ -1,6 +1,7 @@
-import math
 import os
 import time
+
+import math
 
 from wtt.models.time_card import TimeCard
 from wtt.repositories import absence as absence_repo
@@ -393,6 +394,7 @@ def get_work_day_status(profile, start_date=None, end_date=None):
         is_holiday = holiday is not None
         has_recorded_absence = absence_repo.has_absence_on_date(profile, work_day['date'])
         has_authorized_absence = absence_repo.has_authorized_absence_on_date(profile, work_day['date'])
+        absence = absence_repo.get_absence_on_date(profile, work_day['date'])
 
         if is_empty_result(result) and time_cards == 0 and not has_recorded_absence and not is_holiday:
             result = {'class': 'ERROR',
@@ -406,27 +408,28 @@ def get_work_day_status(profile, start_date=None, end_date=None):
         if has_authorized_absence:
             max_shift = profile.max_allowed_extra_hours
         total_worked = get_worked_time_from_any_cards(work_day['cards']) / 60
+        extra_hours = total_worked - profile.daily_office_hours
 
         if is_empty_result(result) and total_worked > max_shift:
             result = {'class': 'WARN',
-                      'reason': f'Worked {total_worked:.2f} hours, which is more than the max allowed ({max_shift}).'}
+                      'reason': f'Worked {time_utils.hours_to_hours_and_minutes_str(total_worked)} hours, which is more than the max allowed ({time_utils.hours_to_hours_and_minutes_str(max_shift)}).'}
 
         max_worked_interval = get_max_worked_interval(work_day['cards']) / 60
         max_allowed_work_block = 6  # FIXME include the '6' hours on the profile (database)
         if is_empty_result(result) and max_worked_interval > max_allowed_work_block:
             result = {'class': 'INFO',
-                      'reason': f'Worked {max_worked_interval:.2f} hours straight, which is more than the max allowed ({max_allowed_work_block}).'}
+                      'reason': f'Worked {time_utils.hours_to_hours_and_minutes_str(max_worked_interval)} hours straight, which is more than the max allowed ({time_utils.hours_to_hours_and_minutes_str(max_allowed_work_block)}).'}
 
         max_lunch_interval = get_max_worked_interval(work_day['cards'][1:]) / 60
         if is_empty_result(result) and max_lunch_interval < profile.required_lunch_time:
             result = {'class': 'INFO',
-                      'reason': f'The biggest break was {max_lunch_interval:.2f} hours, which is less than the required lunch time ({profile.required_lunch_time}).'}
+                      'reason': f'The biggest break was {time_utils.hours_to_hours_and_minutes_str(max_lunch_interval)}, which is less than the required lunch time ({time_utils.hours_to_hours_and_minutes_str(profile.required_lunch_time)}).'}
 
         if last_time_card is not None and time_cards > 0:
             between_work_days = get_max_worked_interval([last_time_card, work_day['cards'][0]]) / 60
             if is_empty_result(result) and between_work_days < profile.min_hours_between_working_days:
                 result = {'class': 'INFO',
-                          'reason': f'The break between shifts was of {between_work_days:.2f} hours, which is less than the allowed ({profile.min_hours_between_working_days}).'}
+                          'reason': f'The break between shifts was of {time_utils.hours_to_hours_and_minutes_str(between_work_days)}, which is less than the allowed ({time_utils.hours_to_hours_and_minutes_str(profile.min_hours_between_working_days)}).'}
 
         if time_cards > 0:
             last_time_card = work_day['cards'][-1]
@@ -436,6 +439,20 @@ def get_work_day_status(profile, start_date=None, end_date=None):
         if is_empty_result(result):
             result = {'class': 'OK'}
 
+        if is_holiday:
+            info = f'Holiday - {holiday.description}, had to work {time_utils.hours_to_hours_and_minutes_str(holiday.working_hours)}'
+        elif has_recorded_absence or has_authorized_absence:
+            info = f'Absence - {absence.description}, authorized: {absence.authorized}'
+        else:
+            info = f'Worked: {time_utils.hours_to_hours_and_minutes_str(total_worked)}'
+            if extra_hours > 0:
+                info += ' - extra: '
+            elif extra_hours < 0:
+                info += ' - missing: '
+            if extra_hours != 0:
+                info += f'{time_utils.hours_to_hours_and_minutes_str(extra_hours)}'
+        result['info'] = info
+
         results[work_day['date']] = result
     return results
 
@@ -443,7 +460,7 @@ def get_work_day_status(profile, start_date=None, end_date=None):
 def filter_work_day_status(work_day_status, filter_out_below='OK'):
     filtered = {}
     for date, status in work_day_status.items():
-        if filter_out_below is None or filter_out_below.upper() == 'NONE':
+        if filter_out_below is None or filter_out_below.upper() == 'NONE' or filter_out_below.upper() == 'VERBOSE':
             filtered[date] = status
         elif filter_out_below.upper() == 'OK':
             if status['class'] not in ('OK',):
@@ -467,7 +484,9 @@ def get_report_from_work_day_status(word_day_status):
     for date, status in word_day_status.items():
         reason_str = ''
         if 'reason' in status:
-            reason_str = f' - {status["reason"]}'
+            reason_str = f'- {status["reason"]}'
+        if 'info' in status:
+            reason_str = f'| {status["info"]}'
         report += f'\n\t{date_utils.datetime_to_string(date, date_format="%d/%m/%Y")}: {status["class"]} {reason_str}'
     if len(word_day_status) == 0:
         report += f'\n\tNothing to report!'
@@ -489,8 +508,11 @@ def print_work_day_status_report_if_recent_error(profile):
 
 
 def print_work_day_status_report(profile, filter_level=None, tabs=False):
-    start_date = date_utils.add_days_to_datetime(date_utils.get_utc_now(), -SHORT_SEARCH_LIMIT_IN_DAYS,
-                                                 to_beginning_of_day=True)
+    if SHORT_SEARCH_LIMIT_IN_DAYS is None:
+        start_date = profile.start_date
+    else:
+        start_date = date_utils.add_days_to_datetime(date_utils.get_utc_now(), -SHORT_SEARCH_LIMIT_IN_DAYS,
+                                                     to_beginning_of_day=True)
     # start_date = None
     work_day_status = get_work_day_status(profile, start_date=start_date)
     filtered = filter_work_day_status(work_day_status, filter_out_below=filter_level)

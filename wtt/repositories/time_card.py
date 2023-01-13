@@ -15,19 +15,35 @@ def get_all_time_cards():
     return results
 
 
+def filter_time_cards_before_localized(time_cards, last_date):
+    last_date_only = date_utils.date_to_beginning_of_day(last_date)
+    if len(time_cards) > 0:
+        last_date_only = date_utils.set_timezone_on_datetime_from_datetime(last_date_only,
+                                                                           time_cards[0].get_localized_timestamp())
+
+    filtered_localized = []
+    for tc in time_cards:
+        localized_date_only = date_utils.date_to_beginning_of_day(tc.get_localized_timestamp())
+        if localized_date_only <= last_date_only:
+            filtered_localized.append(tc)
+    return filtered_localized
+
+
 def get_profile_time_cards(profile, start_date=None, end_date=None):
     if start_date is None:
         start_date = profile.start_date
     if end_date is None:
         end_date = date_utils.get_utc_now()
+    end_date_plus_one = date_utils.add_days_to_datetime(end_date, 1)
     query = """
             SELECT * FROM time_cards
             WHERE profile_uuid = ? AND (event_timestamp_utc >= ? AND event_timestamp_utc <= ?)
             ORDER BY event_timestamp_utc;
         """
-    params = (profile.uuid, start_date, end_date)
+    params = (profile.uuid, start_date, end_date_plus_one)
     results = execute_query(query, params=params, fetch=True)
     results = [TimeCard.FromDatabaseObj(el) for el in results]
+    results = filter_time_cards_before_localized(results, end_date)
     return results
 
 
@@ -68,33 +84,33 @@ def get_today_time_cards(profile):
 
 
 def get_profile_time_cards_grouped_by_day(profile, start_date=None, end_date=None):
-    if start_date is None:
-        start_date = profile.start_date
-    if end_date is None:
-        end_date = date_utils.get_utc_now()
-    query = """
-            SELECT
-                strftime('%Y-%m-%d',event_timestamp_utc) as working_day, 
-                GROUP_CONCAT(event_timestamp_utc) as event_timestamps_utc 
-            FROM time_cards
-            WHERE profile_uuid = ? AND (event_timestamp_utc >= ? AND event_timestamp_utc <= ?)
-            GROUP BY strftime('%Y-%m-%d',event_timestamp_utc)
-            ORDER BY strftime('%Y-%m-%d',event_timestamp_utc);
-        """
-    params = (profile.uuid, start_date, end_date)
-    db_results = execute_query(query, params=params, fetch=True)
+    # """
+    # SELECT
+    #     strftime('%Y-%m-%d',event_timestamp_utc) as working_day,
+    #     GROUP_CONCAT(event_timestamp_utc) as event_timestamps_utc
+    # FROM time_cards
+    # WHERE profile_uuid = ? AND (event_timestamp_utc >= ? AND event_timestamp_utc <= ?)
+    # GROUP BY strftime('%Y-%m-%d',event_timestamp_utc)
+    # ORDER BY strftime('%Y-%m-%d',event_timestamp_utc);
+    # """
+    time_cards = get_profile_time_cards(profile, start_date, end_date)
     results = {
         'glossary': set(),
         'results': []
     }
-    for row in db_results:
+    aggregated = {}
+    for time_card in time_cards:
+        date_str = date_utils.datetime_to_string(time_card.get_localized_timestamp(), '%Y-%m-%d')
+        working_day = date_utils.set_timezone_on_datetime(date_utils.iso_string_to_datetime(date_str), 'UTC')
+        if working_day not in aggregated:
+            aggregated[working_day] = []
+        aggregated[working_day].append(time_card)
+        results['glossary'].add(working_day)
+    for date, cards in aggregated.items():
         parsed = {
-            'date': date_utils.set_timezone_on_datetime(date_utils.iso_string_to_datetime(row['working_day']), 'UTC'),
-            'cards': sorted([date_utils.iso_string_to_datetime(el) for el in row['event_timestamps_utc'].split(',')])
+            'date': date,
+            'cards': sorted(cards, key=lambda x: x.event_timestamp_utc)
         }
-        parsed['cards'] = [TimeCard(profile.uuid, event_timestamp_utc=el, gen_uuid=False, insertion_method='unkown') for
-                           el in parsed['cards']]
-        results['glossary'].add(parsed['date'])
         results['results'].append(parsed)
     return results
 
