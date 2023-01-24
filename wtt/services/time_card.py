@@ -443,6 +443,8 @@ def get_work_day_status(profile, start_date=None, end_date=None):
             info = f'Holiday - {holiday.description}, had to work {time_utils.hours_to_hours_and_minutes_str(holiday.working_hours)}'
         elif has_recorded_absence or has_authorized_absence:
             info = f'Absence - {absence.description}, authorized: {absence.authorized}'
+        elif len(work_day['cards']) % 2 != 0:
+            info = f'Odd number of time cards ({time_cards})'
         else:
             info = f'Worked: {time_utils.hours_to_hours_and_minutes_str(total_worked)}'
             if extra_hours > 0:
