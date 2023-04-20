@@ -268,7 +268,7 @@ def get_extra_hours_balance_in_minutes(profile, daily_details_dict=None, limit_f
     if limit_for_search_days is None:
         start_date = profile.start_date
     else:
-        start_date = date_utils.add_days_to_datetime(date_utils.get_utc_now(), -limit_for_search_days,
+        start_date = date_utils.add_days_to_datetime(date_utils.get_now(), -limit_for_search_days,
                                                      to_beginning_of_day=True)
     grouped_time_cards = time_card_repo.get_profile_time_cards_grouped_by_day(profile, start_date=start_date,
                                                                               end_date=date_utils.get_utc_yesterday())
@@ -513,7 +513,7 @@ def print_work_day_status_report(profile, filter_level=None, tabs=False):
     if SHORT_SEARCH_LIMIT_IN_DAYS is None:
         start_date = profile.start_date
     else:
-        start_date = date_utils.add_days_to_datetime(date_utils.get_utc_now(), -SHORT_SEARCH_LIMIT_IN_DAYS,
+        start_date = date_utils.add_days_to_datetime(date_utils.get_now(), -SHORT_SEARCH_LIMIT_IN_DAYS,
                                                      to_beginning_of_day=True)
     # start_date = None
     work_day_status = get_work_day_status(profile, start_date=start_date)

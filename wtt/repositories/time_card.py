@@ -29,20 +29,36 @@ def filter_time_cards_before_localized(time_cards, last_date):
     return filtered_localized
 
 
+def filter_time_cards_after_localized(time_cards, first_date):
+    first_date_only = date_utils.date_to_beginning_of_day(first_date)
+    if len(time_cards) > 0:
+        first_date_only = date_utils.set_timezone_on_datetime_from_datetime(first_date_only,
+                                                                            time_cards[0].get_localized_timestamp())
+
+    filtered_localized = []
+    for tc in time_cards:
+        localized_date_only = date_utils.date_to_beginning_of_day(tc.get_localized_timestamp())
+        if localized_date_only >= first_date_only:
+            filtered_localized.append(tc)
+    return filtered_localized
+
+
 def get_profile_time_cards(profile, start_date=None, end_date=None):
     if start_date is None:
         start_date = profile.start_date
     if end_date is None:
         end_date = date_utils.get_utc_now()
+    start_date_minus_one = date_utils.add_days_to_datetime(start_date, -1)
     end_date_plus_one = date_utils.add_days_to_datetime(end_date, 1)
     query = """
             SELECT * FROM time_cards
             WHERE profile_uuid = ? AND (event_timestamp_utc >= ? AND event_timestamp_utc <= ?)
             ORDER BY event_timestamp_utc;
         """
-    params = (profile.uuid, start_date, end_date_plus_one)
+    params = (profile.uuid, start_date_minus_one, end_date_plus_one)
     results = execute_query(query, params=params, fetch=True)
     results = [TimeCard.FromDatabaseObj(el) for el in results]
+    results = filter_time_cards_after_localized(results, start_date)
     results = filter_time_cards_before_localized(results, end_date)
     return results
 
